@@ -1,0 +1,1 @@
+Investigate why the demo application in the agent-lab namespace is unavailable. Inspect the cluster, support your diagnosis with evidence, and propose a fix without applying it.

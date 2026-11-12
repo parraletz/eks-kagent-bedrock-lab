@@ -1,0 +1,11 @@
+apiVersion: api.kagent.dev/v1alpha3
+kind: ModelConfig
+metadata:
+  name: eks-diagnostics-bedrock
+  namespace: kagent
+spec:
+  apiKeySecret: bedrock-credentials
+  model: us.anthropic.claude-sonnet-4-20250514-v1:0
+  provider: Bedrock
+  bedrock:
+    region: us-east-1

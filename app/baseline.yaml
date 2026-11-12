@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: agent-lab
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demo-config
+  namespace: agent-lab
+data:
+  LAB_MODE: baseline
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo
+  namespace: agent-lab
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate   # no healthy old Pod to hide the failure
+  selector:
+    matchLabels:
+      app: demo
+  template:
+    metadata:
+      labels:
+        app: demo
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.30-alpine   # TODO: pin by digest
+          ports:
+            - name: http
+              containerPort: 80
+          envFrom:
+            - configMapRef:
+                name: demo-config
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo
+  namespace: agent-lab
+spec:
+  selector:
+    app: demo
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

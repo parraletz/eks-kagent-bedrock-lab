@@ -1,0 +1,12 @@
+config:
+  server:
+    grpcReflection: true
+kagent-tools:
+  tools:
+    enabledTools:
+      - k8s            # Kubernetes tools only; drops the utils provider and its shell tool
+    args:
+      - "--read-only"  # write tools are not registered, so the model never sees them
+  rbac:
+    readOnly: true     # get/list/watch ClusterRole instead of cluster-admin
+    allowSecrets: false

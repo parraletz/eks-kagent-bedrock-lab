@@ -1,0 +1,6 @@
+# Used with: kagent --config kagent/kagent-config.yaml install --namespace kagent
+# (run from the repository root)
+install:
+  kagent:
+    valuesFiles:
+      - kagent/kagent-values.yaml
