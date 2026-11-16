@@ -1,4 +1,4 @@
-# Diagnosing Amazon EKS workloads with kagent and Amazon Bedrock
+# Diagnosing Amazon EKS workloads with kagent and Bedrock
 
 In this hands-on lab, you deploy kagent, an open-source Cloud Native Computing Foundation (CNCF) project, on Amazon EKS, connect it to a model in Amazon Bedrock, and ask it to find out why an application is down. You then break the application in three common ways and compare what the agent reports with what actually happened.
 
@@ -23,7 +23,7 @@ An agent can run those checks for you and summarize what it found. Its report al
 
 The model runs in **Amazon Bedrock**, outside the cluster.
 
-![Architecture: an operator asks a kagent agent on Amazon EKS to investigate; the agent sends the conversation to Amazon Bedrock and calls a read-only MCP tool server, which queries the Kubernetes API for the resources in the agent-lab namespace](eks-kagent-bedrock-architecture.png)
+![Architecture: the kagent agent on Amazon EKS sends the conversation to Amazon Bedrock and calls a read-only MCP tool server that queries the Kubernetes API](eks-kagent-bedrock-architecture.png)
 
 ### Why kagent and Amazon Bedrock
 
@@ -219,12 +219,7 @@ kubectl patch deployment demo -n agent-lab --type=strategic \
   -p '{"spec":{"template":{"spec":{"containers":[{"name":"web","envFrom":[{"configMapRef":{"name":"missing-demo-config"}}]}]}}}}'
 ```
 
-Then ask the agent:
-
-```bash
-SESSION_ID=$(kagent agent session create --agent eks-troubleshooter -o json | jq -r '.session.id')
-kagent agent invoke --session "$SESSION_ID" --file task.txt --stream
-```
+Then ask the agent in a new session, with the two commands from the previous section.
 
 **What a correct report says.** The diagnosis should state the cause directly:
 
@@ -287,12 +282,7 @@ kubectl patch service demo -n agent-lab --type=merge \
   -p '{"spec":{"selector":{"app":"different-app"}}}'
 ```
 
-The `curl-check` request now fails, even though `kubectl get pods -n agent-lab` shows the Pod as `1/1 Running`. Ask the agent in a new session:
-
-```bash
-SESSION_ID=$(kagent agent session create --agent eks-troubleshooter -o json | jq -r '.session.id')
-kagent agent invoke --session "$SESSION_ID" --file task.txt --stream
-```
+The `curl-check` request now fails, even though `kubectl get pods -n agent-lab` shows the Pod as `1/1 Running`. Ask the agent in a new session, with the same two commands as before.
 
 **What a correct report says.**
 
@@ -323,11 +313,7 @@ kubectl get service demo -n agent-lab -o jsonpath='{.spec.selector}'
 kubectl get pods -n agent-lab --show-labels
 ```
 
-**Fix it.** Reapply the original manifest and repeat the `curl-check` request:
-
-```bash
-kubectl apply -f app/baseline.yaml
-```
+**Fix it.** Reapply `app/baseline.yaml` as in Scenario 1 and repeat the `curl-check` request.
 
 ## Scenario 3: The Pod is running but never becomes ready
 
@@ -342,12 +328,7 @@ kubectl patch deployment demo -n agent-lab --type=strategic \
   -p '{"spec":{"template":{"spec":{"containers":[{"name":"web","readinessProbe":{"httpGet":{"path":"/","port":8081}}}]}}}}'
 ```
 
-Wait until `kubectl get pods -n agent-lab` shows the new Pod as `0/1 Running`, then ask the agent in a new session:
-
-```bash
-SESSION_ID=$(kagent agent session create --agent eks-troubleshooter -o json | jq -r '.session.id')
-kagent agent invoke --session "$SESSION_ID" --file task.txt --stream
-```
+Wait until `kubectl get pods -n agent-lab` shows the new Pod as `0/1 Running`, then ask the agent in a new session.
 
 **What a correct report says.**
 
@@ -378,11 +359,7 @@ kubectl get pods -n agent-lab
 kubectl describe pod -n agent-lab -l app=demo | grep -A2 Readiness
 ```
 
-**Fix it.** Reapply the original manifest and repeat the `curl-check` request:
-
-```bash
-kubectl apply -f app/baseline.yaml
-```
+**Fix it.** Reapply `app/baseline.yaml` as in Scenario 1 and repeat the `curl-check` request.
 
 ## Results
 
@@ -412,7 +389,7 @@ The steps above are the ones that work. These are the problems this lab hit befo
 - **The first model returned `AccessDeniedException`.** The lab was written for Claude Sonnet 5.5. Model access was enabled, but the account's tokens-per-minute quota for that model was 0. The lab moved to Claude Sonnet 4.6. Check the quota in Service Quotas before you pick a model.
 - **The install stopped with `helm not found in PATH`.** The kagent CLI doesn't bundle Helm. It runs the `helm` on your workstation, which is why Helm is a prerequisite.
 - **The install failed without Bedrock values.** The CLI assumes OpenAI and asks for `OPENAI_API_KEY`. With the provider set to Bedrock, it failed again while creating `default-model-config`, because the chart has no default Bedrock model. The fix is the `providers.bedrock` block in `kagent/kagent-values.yaml`. The path to that file in `kagent/kagent-config.yaml` is relative to the config file, not to your working directory.
-- **The agent never became ready.** Its status showed `GoldenActorCrashed`. The EKS module's node security group doesn't open port 443 between nodes, and Agent Substrate needs it. The fix is the `ingress_self_all` rule in `terraform/main.tf`.
+- **The agent never became ready.** `kubectl get agent eks-troubleshooter -n kagent -o jsonpath='{.status.conditions}'` showed `GoldenActorCrashed`. The EKS module's node security group doesn't open port 443 between nodes, and Agent Substrate needs it. The fix is the `ingress_self_all` rule in `terraform/main.tf`.
 - **Each investigation cost more than the one before.** The agent reads every event in the namespace, and events from earlier faults stay for about an hour. The results above show the difference: USD 0.12 in a clean namespace, USD 0.26 on average with history.
 
 ## Cost
@@ -431,7 +408,7 @@ The lab runs for about two to three hours. Prices are on-demand list prices in `
 | Bedrock, Claude Sonnet 4.6 (`us.` inference profile) | each investigation | USD 3.30 per million input tokens, USD 16.50 per million output tokens | ~ USD 1.50 (10 investigations) |
 | **Total** | | | **~ USD 2.60** |
 
-Bedrock costs depend on how much the agent reads. Each tool result is added to the conversation, and the whole conversation is sent to the model again on each step, so input tokens grow with every call. In the [results](#results), an investigation used about 27,000 input and 1,900 output tokens in a clean namespace, or USD 0.12. With an hour of events from earlier faults in the namespace, the average rose to USD 0.26, and the most expensive run cost USD 0.39. The estimate above assumes about USD 0.15 per investigation.
+Bedrock costs depend on how much the agent reads. Each tool result is added to the conversation, and the whole conversation is sent to the model again on each step, so input tokens grow with every call. In the [results](#results), an investigation cost between USD 0.12 and USD 0.39. The estimate above assumes about USD 0.15.
 
 The `us.` inference profile routes requests to US Regions and costs 10% more than the `global.` profile (`global.anthropic.claude-sonnet-4-6`, USD 3 and USD 15 per million tokens), which can route them to any supported Region. Use `us.` if your data has to stay in the US.
 
@@ -456,9 +433,8 @@ What changes this number:
 
 - **Running kagent in an existing cluster** removes the control plane, NAT gateway, and most of the node cost. You pay for the capacity kagent uses on your nodes, plus RDS and Bedrock: roughly USD 200 per month.
 - **Investigation volume and size** affect only the Bedrock line. At 50 investigations per day, Bedrock is about USD 260 per month. What the agent reads matters more than how often it runs: a busy namespace with thousands of events, or large logs, can cost several times the estimate per investigation. The `global.` inference profile lowers this line by about 10%.
-- **Savings Plans or Reserved Instances** reduce the node and RDS costs by about a third.
 
-Check [Amazon EKS pricing](https://aws.amazon.com/eks/pricing/), [Amazon Bedrock pricing](https://aws.amazon.com/bedrock/pricing/), [Amazon VPC pricing](https://aws.amazon.com/vpc/pricing/), and [Amazon RDS for PostgreSQL pricing](https://aws.amazon.com/rds/postgresql/pricing/) for current rates.
+Check [Amazon EKS pricing](https://aws.amazon.com/eks/pricing/) and [Amazon Bedrock pricing](https://aws.amazon.com/bedrock/pricing/) for current rates.
 
 ## Cleanup
 
@@ -482,7 +458,7 @@ Then delete the AWS infrastructure:
 terraform -chdir=terraform destroy
 ```
 
-This removes everything Terraform created: the EKS cluster and node group, the VPC with its subnets, NAT gateway, Elastic IP, and internet gateway, the IAM roles for the cluster, the nodes, and the EBS CSI driver, the cluster's OIDC provider, and its CloudWatch log group. In the lab run, `terraform destroy` took about 12 minutes and removed 61 resources. The KMS key that encrypts the cluster's Secrets can't be deleted immediately. Terraform schedules it for deletion, and AWS removes it after the waiting period, 30 days by default.
+This removes everything Terraform created: the cluster, its nodes, the VPC with its NAT gateway and Elastic IP, and the IAM roles. In the lab run, `terraform destroy` took about 12 minutes and removed 61 resources. The KMS key that encrypts the cluster's Secrets can't be deleted immediately. Terraform schedules it for deletion, and AWS removes it after the waiting period, 30 days by default.
 
 Finally, check that no volume from the lab is left behind. The command should print nothing:
 
@@ -492,12 +468,9 @@ aws ec2 describe-volumes --region us-east-1 \
   --query 'Volumes[].VolumeId' --output text
 ```
 
-On the Bedrock side, a short-term API key expires on its own and leaves no resource to delete. If you used a long-term key, delete it in the Bedrock console, along with the IAM user the console created for it. Enabling model access doesn't create billable resources.
+On the Bedrock side, a short-term API key expires on its own and leaves no resource to delete. If you used a long-term key, delete it in the Bedrock console, along with the IAM user the console created for it.
 
 ## Questions you might have
-
-**The agent never becomes ready. What should I check?**
-Look at its conditions with `kubectl get agent eks-troubleshooter -n kagent -o jsonpath='{.status.conditions}' | jq`. If `Ready` is `False` with a reason like `ActorTemplateRetrying` or `GoldenActorCrashed`, Agent Substrate can't finish starting the agent. On EKS, the usual cause is the node security group: check that the `ingress_self_all` rule from `terraform/main.tf` exists. Once traffic between nodes is open, the agent becomes ready on Substrate's next retry, within seconds.
 
 **Requests fail with `AccessDeniedException` even though model access is enabled. Why?**
 Check the model's quota under Amazon Bedrock in Service Quotas. Each model has its own tokens-per-minute quota, set separately for the `us.` and `global.` inference profiles, and some accounts get a quota of 0 for newer models. A Marketplace agreement for the model doesn't change that. If the quota is 0, request an increase or use a model with a quota. This lab moved from Claude Sonnet 5.5 to Claude Sonnet 4.6 for that reason. Also check that the key was generated in the same Region as `bedrock.region` in the ModelConfig.
@@ -534,6 +507,5 @@ The agent found the cause in all 18 runs of this lab. These are three short, wel
 
 - **Part 2 of this series** runs the same three scenarios with other models available in Bedrock: OpenAI's gpt-oss-120b, Qwen3 Next 80B, and Amazon Nova Pro. It compares accuracy, investigation depth, duration, and cost per diagnosis, with and without event history in the namespace.
 - Reduce what the agent reads about events. They're the largest source of input tokens. Ask for warning events only in the system prompt, or put a tool in front of `k8s_get_events` that filters them by type and age.
-- Run the agent on a failure you've had in your own environment, in a non-production cluster.
 - Add tools the agent doesn't have yet, such as CloudWatch metrics or the AWS Load Balancer Controller's events, so it can investigate problems outside Kubernetes objects.
 - For production, move to the Helm installation with Amazon RDS and a dedicated, namespace-scoped tool server.

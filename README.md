@@ -1,6 +1,6 @@
 # EKS + kagent + Amazon Bedrock troubleshooting lab
 
-Companion repository for the article [Diagnosing Amazon EKS workloads with kagent and Amazon Bedrock](article/diagnosing-eks-workloads-with-kagent-and-bedrock.md) <!-- TODO: link to the Builder Center post once published -->.
+Companion repository for the article [Diagnosing Amazon EKS workloads with kagent and Bedrock](https://builder.aws.com/content/3MD0Rc1FwwWM8pl6th9T3rXcs2K/diagnosing-amazon-eks-workloads-with-kagent-and-bedrock), published on AWS Builder Center. A copy of the article is in [`article/`](article/diagnosing-eks-workloads-with-kagent-and-bedrock.md).
 
 Follow the article step by step. Every command is explained there.
 
