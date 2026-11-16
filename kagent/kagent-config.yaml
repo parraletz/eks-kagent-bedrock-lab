@@ -1,6 +1,7 @@
 # Used with: kagent --config kagent/kagent-config.yaml install --namespace kagent
-# (run from the repository root)
+# Paths in valuesFiles are relative to this file, not to the working directory.
 install:
+  defaultModelProvider: Bedrock   # the CLI defaults to OpenAI and fails without OPENAI_API_KEY
   kagent:
     valuesFiles:
-      - kagent/kagent-values.yaml
+      - kagent-values.yaml

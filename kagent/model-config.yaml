@@ -5,7 +5,8 @@ metadata:
   namespace: kagent
 spec:
   apiKeySecret: bedrock-credentials
-  model: us.anthropic.claude-sonnet-4-20250514-v1:0
+  apiKeySecretKey: AWS_BEARER_TOKEN_BEDROCK
+  model: us.anthropic.claude-sonnet-4-6
   provider: Bedrock
   bedrock:
     region: us-east-1

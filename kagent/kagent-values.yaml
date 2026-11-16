@@ -10,3 +10,14 @@ kagent-tools:
   rbac:
     readOnly: true     # get/list/watch ClusterRole instead of cluster-admin
     allowSecrets: false
+# The chart has no defaults for Bedrock, so without this block the install fails
+# creating default-model-config (spec.model is null). The CLI does not create the
+# bedrock-credentials Secret; create it yourself before the agent runs.
+providers:
+  bedrock:
+    provider: Bedrock
+    model: us.anthropic.claude-sonnet-4-6
+    apiKeySecretRef: bedrock-credentials
+    apiKeySecretKey: AWS_BEARER_TOKEN_BEDROCK
+    config:
+      region: us-east-1

@@ -67,6 +67,20 @@ module "eks" {
     }
   }
 
+  # The module only opens ports 1025-65535 between nodes. Agent Substrate's API
+  # server listens on 443 and is reached Pod-to-Pod across nodes; without this
+  # rule, agents time out while bootstrapping (GoldenActorCrashed).
+  node_security_group_additional_rules = {
+    ingress_self_all = {
+      description = "Node to node, all ports and protocols"
+      type        = "ingress"
+      protocol    = "-1"
+      from_port   = 0
+      to_port     = 0
+      self        = true
+    }
+  }
+
   eks_managed_node_groups = {
     default = {
       instance_types = ["m5.large"]
