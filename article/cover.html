@@ -1,0 +1,115 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+html,body{margin:0;width:1600px;height:900px;overflow:hidden;background:#0b1020}
+svg{display:block} text{white-space:pre}
+</style></head><body>
+<svg width="1600" height="900" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg" font-family="Noto Sans, Helvetica, Arial, sans-serif">
+  <defs>
+    <radialGradient id="bg" cx="70%" cy="35%" r="85%">
+      <stop offset="0" stop-color="#1b2550"/><stop offset="0.55" stop-color="#0f1630"/><stop offset="1" stop-color="#080b18"/>
+    </radialGradient>
+    <linearGradient id="eks" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9900"/><stop offset="1" stop-color="#e8590c"/></linearGradient>
+    <linearGradient id="br" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2dd4bf"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+    <linearGradient id="kg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#6366f1"/></linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#ffffff" stroke-opacity="0.04"/></pattern>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter>
+    <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#94a3b8"/></marker>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect width="1600" height="900" fill="url(#grid)"/>
+
+  <!-- Headline -->
+  <text x="90" y="170" fill="#f8fafc" font-size="78" font-weight="800">Who broke</text>
+  <text x="90" y="262" fill="#f8fafc" font-size="78" font-weight="800">the <tspan fill="#ff9900">Pod</tspan>?</text>
+  <text x="92" y="330" fill="#cbd5e1" font-size="30">An AI on-call detective for Amazon EKS</text>
+  <g font-size="22" font-weight="700">
+    <rect x="90" y="368" width="128" height="44" rx="22" fill="#ff9900" fill-opacity=".14" stroke="#ff9900"/>
+    <text x="154" y="397" fill="#ffb84d" text-anchor="middle">EKS</text>
+    <rect x="232" y="368" width="138" height="44" rx="22" fill="#8b5cf6" fill-opacity=".16" stroke="#a78bfa"/>
+    <text x="301" y="397" fill="#c4b5fd" text-anchor="middle">kagent</text>
+    <rect x="384" y="368" width="236" height="44" rx="22" fill="#14b8a6" fill-opacity=".14" stroke="#2dd4bf"/>
+    <text x="502" y="397" fill="#5eead4" text-anchor="middle">Amazon Bedrock</text>
+  </g>
+
+  <!-- Broken pod card, 2 a.m. -->
+  <g transform="translate(90,500)">
+    <rect width="520" height="250" rx="18" fill="#0f172a" stroke="#334155"/>
+    <circle cx="28" cy="28" r="7" fill="#ef4444"/><circle cx="50" cy="28" r="7" fill="#f59e0b"/><circle cx="72" cy="28" r="7" fill="#22c55e"/>
+    <text x="490" y="34" fill="#64748b" font-size="18" text-anchor="end" font-family="DejaVu Sans Mono, monospace">02:07</text>
+    <g font-family="DejaVu Sans Mono, monospace" font-size="21" xml:space="preserve">
+      <text x="28" y="88" fill="#94a3b8">$ kubectl get pods -n agent-lab</text>
+      <text x="28" y="128" fill="#64748b">NAME         READY  STATUS</text>
+      <text x="28" y="164" fill="#e2e8f0">demo-5cf4…   <tspan fill="#f87171">0/1</tspan>    Running</text>
+      <text x="28" y="212" fill="#94a3b8">$ curl demo  →  <tspan fill="#f87171" font-weight="700">000</tspan></text>
+    </g>
+  </g>
+
+  <!-- Diagram: EKS cluster with kagent -->
+  <g transform="translate(760,150)">
+    <circle cx="300" cy="300" r="260" fill="#ff9900" fill-opacity=".05" filter="url(#glow)"/>
+    <!-- cluster hexagon -->
+    <polygon points="300,40 525,170 525,430 300,560 75,430 75,170" fill="#111a33" stroke="url(#eks)" stroke-width="4"/>
+    <text x="300" y="138" fill="#ffb84d" font-size="24" font-weight="700" text-anchor="middle">Amazon EKS</text>
+
+    <!-- pods -->
+    <g>
+      <rect x="116" y="380" width="96" height="70" rx="12" fill="#1e293b" stroke="#475569"/>
+      <text x="164" y="413" fill="#cbd5e1" font-size="16" text-anchor="middle">demo</text>
+      <text x="164" y="436" fill="#f87171" font-size="15" text-anchor="middle" font-weight="700">0/1</text>
+      <rect x="236" y="400" width="128" height="70" rx="12" fill="#1e293b" stroke="#475569"/>
+      <text x="300" y="433" fill="#cbd5e1" font-size="16" text-anchor="middle">service</text>
+      <text x="300" y="456" fill="#f59e0b" font-size="15" text-anchor="middle" font-weight="700">no endpoints</text>
+      <rect x="388" y="380" width="96" height="70" rx="12" fill="#1e293b" stroke="#475569"/>
+      <text x="436" y="413" fill="#cbd5e1" font-size="16" text-anchor="middle">config</text>
+      <text x="436" y="436" fill="#f87171" font-size="15" text-anchor="middle" font-weight="700">missing</text>
+    </g>
+
+    <!-- kagent agent with magnifier -->
+    <g transform="translate(300,250)">
+      <circle r="92" fill="url(#kg)" fill-opacity=".18" stroke="url(#kg)" stroke-width="3"/>
+      <!-- robot head -->
+      <rect x="-46" y="-40" width="92" height="74" rx="20" fill="#c4b5fd"/>
+      <rect x="-30" y="-20" width="60" height="30" rx="12" fill="#1e1b4b"/>
+      <circle cx="-13" cy="-5" r="7" fill="#5eead4"/><circle cx="13" cy="-5" r="7" fill="#5eead4"/>
+      <line x1="0" y1="-40" x2="0" y2="-58" stroke="#c4b5fd" stroke-width="5"/><circle cx="0" cy="-62" r="7" fill="#ff9900"/>
+      <text y="68" fill="#ede9fe" font-size="24" font-weight="800" text-anchor="middle">kagent</text>
+      <!-- magnifier -->
+      <g transform="translate(92,-6) rotate(-20)">
+        <circle r="26" fill="#0b1020" fill-opacity=".4" stroke="#f8fafc" stroke-width="6"/>
+        <line x1="20" y1="20" x2="46" y2="46" stroke="#f8fafc" stroke-width="9" stroke-linecap="round"/>
+      </g>
+    </g>
+    <!-- read-only arrows to pods -->
+    <path d="M235 330 L180 376" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#ah)"/>
+    <path d="M300 345 L300 396" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#ah)"/>
+    <path d="M365 330 L420 376" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#ah)"/>
+    <text x="300" y="600" fill="#94a3b8" font-size="18" text-anchor="middle">read-only: get · describe · logs</text>
+  </g>
+
+  <!-- Bedrock cloud with models -->
+  <g transform="translate(1010,40)">
+    <path d="M300 15 C300 15 300 15 300 15" />
+  </g>
+  <g>
+    <path d="M1168 392 C1230 380 1300 375 1330 362" stroke="url(#br)" stroke-width="4" fill="none" stroke-dasharray="2 10" stroke-linecap="round"/>
+    <g transform="translate(1290,60)">
+      <rect width="270" height="330" rx="22" fill="#0d1b2a" stroke="url(#br)" stroke-width="3"/>
+      <text x="135" y="312" fill="#64748b" font-size="17" text-anchor="middle">more models in Part 2</text>
+      <text x="135" y="44" fill="#5eead4" font-size="24" font-weight="800" text-anchor="middle">Amazon Bedrock</text>
+      <g font-size="20" font-weight="700">
+        <rect x="24" y="70" width="222" height="44" rx="12" fill="#d97757" fill-opacity=".30" stroke="#d97757" stroke-width="2.5"/>
+        <text x="135" y="99" fill="#f4b8a2" text-anchor="middle">Claude Sonnet 4.6</text>
+        </g><g font-size="20" font-weight="700" opacity=".38"><rect x="24" y="124" width="222" height="44" rx="12" fill="#6366f1" fill-opacity=".18" stroke="#818cf8"/>
+        <text x="135" y="153" fill="#c7d2fe" text-anchor="middle">Qwen3</text>
+        <rect x="24" y="178" width="222" height="44" rx="12" fill="#10b981" fill-opacity=".14" stroke="#34d399"/>
+        <text x="135" y="207" fill="#a7f3d0" text-anchor="middle">gpt-oss</text>
+        <rect x="24" y="232" width="222" height="44" rx="12" fill="#f59e0b" fill-opacity=".14" stroke="#fbbf24"/>
+        <text x="135" y="261" fill="#fde68a" text-anchor="middle">Nova Pro</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- footer stat -->
+  <text x="1510" y="850" fill="#94a3b8" font-size="22" text-anchor="end">18 real investigations · less than a coffee each ☕</text>
+</svg>
+</body></html>

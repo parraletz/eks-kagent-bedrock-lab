@@ -25,6 +25,14 @@ The model runs in **Amazon Bedrock**, outside the cluster.
 
 ![Architecture: an operator asks a kagent agent on Amazon EKS to investigate; the agent sends the conversation to Amazon Bedrock and calls a read-only MCP tool server, which queries the Kubernetes API for the resources in the agent-lab namespace](eks-kagent-bedrock-architecture.png)
 
+### Why kagent and Amazon Bedrock
+
+You could write this agent yourself with an SDK and a few `kubectl` calls. This lab uses kagent for two reasons. The agent, its model, and its tools are Kubernetes resources, so you review, version, and apply them like any other manifest. And the tool server, not the model, decides what the agent can do, so read-only access is enforced by configuration and RBAC instead of by a prompt.
+
+The model runs in Bedrock so that it's billed in the same AWS account as the cluster. Access depends on a key and a per-model quota, and Bedrock publishes token usage per model to Amazon CloudWatch, which is how the costs in this article were measured. Changing models means changing one field in a ModelConfig.
+
+The tradeoffs: kagent 1.0 needs Kubernetes 1.37 or later, it brings its own runtime (Agent Substrate) with a database and an object store to operate, and it authenticates to Bedrock with an API key instead of an IAM role. The [questions at the end](#questions-you-might-have) cover each one.
+
 ### How an investigation works
 
 When you ask a question, kagent sends it to Bedrock together with the list of tools the agent is allowed to use. The model doesn't access the cluster. It replies with a request such as "call `k8s_get_events` for namespace `agent-lab`". kagent forwards that call to the tool server, and the tool server queries the Kubernetes API using its own ServiceAccount. The result goes back to Bedrock in the next request, and the loop repeats until the model has enough information to write its report.
@@ -396,6 +404,16 @@ In all nine runs, the agent identified the cause, cited the field that changed, 
 | Namespace with events from earlier runs | 69,600 | USD 0.26 | USD 0.39 |
 
 The tool behind the difference is `k8s_get_events`. It runs `kubectl get events -o json` for the whole namespace, and the agent called it in every run. Each fault and recovery adds events, so input tokens grew run after run, from 34,500 in the first run to 108,000 in the ninth. The extra events didn't change any diagnosis, but they showed up in the reports. In one run, the agent listed the ConfigMap failure from an earlier scenario as a "pre-existing issue, already recovered".
+
+## What went wrong along the way
+
+The steps above are the ones that work. These are the problems this lab hit before it worked end to end, and where each fix lives:
+
+- **The first model returned `AccessDeniedException`.** The lab was written for Claude Sonnet 5.5. Model access was enabled, but the account's tokens-per-minute quota for that model was 0. The lab moved to Claude Sonnet 4.6. Check the quota in Service Quotas before you pick a model.
+- **The install stopped with `helm not found in PATH`.** The kagent CLI doesn't bundle Helm. It runs the `helm` on your workstation, which is why Helm is a prerequisite.
+- **The install failed without Bedrock values.** The CLI assumes OpenAI and asks for `OPENAI_API_KEY`. With the provider set to Bedrock, it failed again while creating `default-model-config`, because the chart has no default Bedrock model. The fix is the `providers.bedrock` block in `kagent/kagent-values.yaml`. The path to that file in `kagent/kagent-config.yaml` is relative to the config file, not to your working directory.
+- **The agent never became ready.** Its status showed `GoldenActorCrashed`. The EKS module's node security group doesn't open port 443 between nodes, and Agent Substrate needs it. The fix is the `ingress_self_all` rule in `terraform/main.tf`.
+- **Each investigation cost more than the one before.** The agent reads every event in the namespace, and events from earlier faults stay for about an hour. The results above show the difference: USD 0.12 in a clean namespace, USD 0.26 on average with history.
 
 ## Cost
 
